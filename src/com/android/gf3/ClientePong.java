@@ -32,18 +32,20 @@ public class ClientePong extends Activity {
       public int direcx = 1;   //direccion de la bola
       public int direcy = 1;   //
       public int speed = 4; 	//velocidad de la pelota
-      private int _x = 20;		//x de la barra (local)
+      private int _x = 2;		//x de la barra (local)
       private int _y = 20;		//y de la barra (local)
       private int ye = 0;		//y de la barra enemiga
       private BufferedReader input;
+      private PrintWriter out;
       private Socket s;
       private int bwidth;
       private int bheight;
       private int width;
       private int height;
-      private PrintWriter out;
+      private ThreadRed threadr;
 	@Override
     public void onCreate(Bundle savedInstanceState) {
+		threadr = new ThreadRed();
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
@@ -52,38 +54,25 @@ public class ClientePong extends Activity {
         Display display = getWindowManager().getDefaultDisplay(); 
         width = display.getWidth();
         height = display.getHeight();
+        _y = height/2; 
         //--------------------------------------------------------------------------------------
         Log.d("gf3","w "+ width);
         Log.d("gf3","h "+ height);
-        
+        threadr.setRunning(true);
+        threadr.start();
         setContentView(new Panel(this));
-        try {
-            s = new Socket("192.168.1.104",8888);
-            out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(s.getOutputStream())), true);
-            out.println("hola");
-            Log.d("Cliente", "empezando el cliente");
-            input = new BufferedReader(new InputStreamReader(s.getInputStream()));
-            ye = Integer.parseInt(input.readLine());
         
-            
-	    } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-	    } catch (IOException e) {
-	    	// TODO Auto-generated catch block
-            e.printStackTrace();
-	    }
     }
  
     class Panel extends SurfaceView implements SurfaceHolder.Callback {
         private TutorialThread _thread;
-       private ThreadRed threadr;
+      
       private Bitmap _scratch;
       private Bitmap ball;
         public Panel(Context context) {
             super(context);
             getHolder().addCallback(this);
-            threadr = new ThreadRed();
+            
             _thread = new TutorialThread(getHolder(), this);
             _scratch = BitmapFactory.decodeResource(getResources(), R.drawable.bar);
             ball = BitmapFactory.decodeResource(getResources(), R.drawable.ball);
@@ -100,9 +89,11 @@ public class ClientePong extends Activity {
         	switch(keyCode)
             {
             case KeyEvent.KEYCODE_MENU:
-            
+            	if(con){
             	out.println("end");
-        		x = 170;
+            	}
+            	
+            	x = 170;
         		Log.d("gf3", "se apacho menu");
         		try {	
 					s.close();
@@ -125,7 +116,7 @@ public class ClientePong extends Activity {
             
             
             canvas.drawColor(Color.RED);
-            canvas.drawBitmap(_scratch, _x - (_scratch.getWidth() / 2), _y - (_scratch.getHeight() / 2), null);
+            canvas.drawBitmap(_scratch, _x , _y - (_scratch.getHeight() / 2), null);
             canvas.drawBitmap(ball, x , y, null);
             canvas.drawBitmap(_scratch, 750 , ye, null);
             
@@ -138,10 +129,10 @@ public class ClientePong extends Activity {
      
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            _thread.setRunning(true);
+        	
+        	_thread.setRunning(true);
             _thread.start();
-            threadr.setRunning(true);
-            threadr.start();
+            
            
         }
      
@@ -185,7 +176,9 @@ public class ClientePong extends Activity {
             while (_run) {
                 c = null;
                 try {
+                	if(con){
                 	out.println("asdf");
+                	}
                     c = _surfaceHolder.lockCanvas(null);
                     synchronized (_surfaceHolder) {
                     	if(x >= width - bwidth ){
@@ -219,17 +212,22 @@ public class ClientePong extends Activity {
                     }
                 }
             }
+            if(con){
             out.println("end");
+            }
             try {
         		
         		y = 50;
+        		if(con){
 				s.close();
+        		}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
         }
     }
+    private boolean con = false;
     class ThreadRed extends Thread {
         private boolean running = false;
         //private SurfaceHolder surfaceHolder;
@@ -249,7 +247,22 @@ public class ClientePong extends Activity {
  
         @Override
         public void run() {
-            //Canvas c;
+        	try {
+                s = new Socket("192.168.1.104",8888);
+                out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(s.getOutputStream())), true);
+                out.println("hola");
+                Log.d("Cliente", "empezando el cliente");
+                input = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                ye = Integer.parseInt(input.readLine());
+                con = true;
+    	    } catch (UnknownHostException e) {
+                running = false;
+                e.printStackTrace();
+    	    } catch (IOException e) {
+    	    	running = false;
+    	    	// TODO Auto-generated catch block
+                e.printStackTrace();
+    	    }
             while (running) {
                 //c = null;
                 try {

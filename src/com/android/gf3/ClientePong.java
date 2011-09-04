@@ -2,8 +2,10 @@ package com.android.gf3;
 
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -29,8 +31,8 @@ import android.view.Window;
 import android.view.WindowManager;
  
 public class ClientePong extends Activity {
-	  private int x = 350; //x de la pelota
-      private int y = 0;   //y de la pelota
+	  private float x = 350; //x de la pelota
+      private float y = 0;   //y de la pelota
       public int direcx = 1;   //direccion de la bola
       public int direcy = 1;   //
       public int speed = 4; 	//velocidad de la pelota
@@ -45,8 +47,12 @@ public class ClientePong extends Activity {
       private DatagramPacket receivePacket;
       private int bwidth;
       private int bheight;
+      private int puntosl;
+      private int puntose;
+      
       private int width;  //screen resol
       private int height; //screen resol
+      byte[] msg = new byte[5];
       
       private ThreadRed threadr;
 	@Override
@@ -118,6 +124,7 @@ public class ClientePong extends Activity {
         public boolean onTouchEvent(MotionEvent event) {
             //_x = (int) event.getX();
             _y = (int) event.getY();
+            msg[0] = (byte) (_y/4);
             return true;
         }
         @Override
@@ -128,7 +135,7 @@ public class ClientePong extends Activity {
             canvas.drawBitmap(_scratch, _x , _y - (sheight / 2), null);
             canvas.drawBitmap(ball, x , y, null);
             canvas.drawBitmap(_scratch, 750 , ye, null);
-            canvas.drawText("0|1", width/2, 20,paint);
+            canvas.drawText(puntosl+"|"+puntose, width/2, 20,paint);
             
         }
      
@@ -191,6 +198,7 @@ public class ClientePong extends Activity {
                 	//}
                     c = _surfaceHolder.lockCanvas(null);
                     synchronized (_surfaceHolder) {
+                    	/*
                     	if(x >= width - bwidth ){
                     		direcx= -1;
                     	}if(y >= height - bheight){
@@ -211,6 +219,7 @@ public class ClientePong extends Activity {
                     	
                     	x = x+direcx*speed;
                     	y = y+ direcy*speed;
+                    	*/
                         _panel.onDraw(c);
                     }
                 } finally {
@@ -258,25 +267,32 @@ public class ClientePong extends Activity {
         	 byte[] res; 
         	 int id;
         	 int anterior = 0;
+        	 int port;
         	 byte cicle;
+        	
         	try {
-                /* s = new Socket("192.168.1.104",8888);
+        		
+                s = new Socket("192.168.1.104",8887);
                 out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(s.getOutputStream())), true);
-                out.println("hola");
+                //out.println("hola");
                 Log.d("Cliente", "empezando el cliente");
                 input = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                ye = Integer.parseInt(input.readLine());
-                con = true; */
+                port = Integer.parseInt(input.readLine());
+                Log.d("gf3",""+port);
+                s.close();
+                //con = true; 
         		  //BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
         		  String messageStr="hello";
         	      socketUDP = new DatagramSocket();
         	      InetAddress IPAddress = InetAddress.getByName("192.168.1.104");
         	      byte[] sendData = messageStr.getBytes();
         	      byte[] receiveData = new byte[1024];
-        	      sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 8888);
+        	      sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
         	      socketUDP.send(sendPacket);
         	      receivePacket = new DatagramPacket(receiveData,receiveData.length);
+        	      Log.d("Cliente", "esperando paquete udp");
         	      socketUDP.receive(receivePacket);
+        	      Log.d("Cliente", "recibimos paquete udp");
         	      ye = receivePacket.getData()[0];
         	      
         	     
@@ -295,18 +311,24 @@ public class ClientePong extends Activity {
                 	//-------------------------------------------------------------------------
                 	
                 	try {
-                		
-              	      	//socketUDP.send(sendPacket);
+                		sendPacket.setData(msg);
+                		sendPacket.setLength(5);
+              	      	socketUDP.send(sendPacket);
               	      	socketUDP.receive(receivePacket);
               	      	res = receivePacket.getData();
-              	      	id = res[2];
+              	      	id = res[4];
               	      	Log.d("gf3",""+id);
               	      
               	      	if(id > anterior){
               	      		
               	      		anterior = id;
-              	      		ye = res[0]*4 + res[1];
-              	      		Log.d("gf3","--"+res[0]);
+              	      		x = (float) (res[0]*7.5+res[1]);
+              	      		y = res[2]*4+res[3];
+              	      		ye = res[5]*2 + res[6];
+              	      		puntosl = res[7];
+              	      		puntose = res[8];
+          	      		
+              	      		Log.d("gf3","--"+res[1]);
               	      	}
               	  	if(id > 124){
           	      		anterior = 0;

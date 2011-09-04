@@ -17,6 +17,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
@@ -44,8 +45,9 @@ public class ClientePong extends Activity {
       private DatagramPacket receivePacket;
       private int bwidth;
       private int bheight;
-      private int width;
-      private int height;
+      private int width;  //screen resol
+      private int height; //screen resol
+      
       private ThreadRed threadr;
 	@Override
     public void onCreate(Bundle savedInstanceState) {
@@ -70,19 +72,22 @@ public class ClientePong extends Activity {
  
     class Panel extends SurfaceView implements SurfaceHolder.Callback {
         private TutorialThread _thread;
-      private int sheight; 
-      private Bitmap _scratch;
-      private Bitmap ball;
-        public Panel(Context context) {
+        private int sheight; 
+        private Bitmap _scratch;
+      	private Bitmap ball;
+      	private Paint paint;
+      	public Panel(Context context) {
             super(context);
             getHolder().addCallback(this);
             
             _thread = new TutorialThread(getHolder(), this);
-            _scratch = BitmapFactory.decodeResource(getResources(), R.drawable.bar);
+            _scratch = BitmapFactory.decodeResource(getResources(), R.drawable.bar2);
             ball = BitmapFactory.decodeResource(getResources(), R.drawable.ball);
             bwidth = ball.getWidth();
             bheight = ball.getHeight();
             sheight = _scratch.getHeight();
+            paint = new Paint();
+            paint.setTextSize(20);
             setFocusableInTouchMode(true);
         }
      
@@ -123,6 +128,7 @@ public class ClientePong extends Activity {
             canvas.drawBitmap(_scratch, _x , _y - (sheight / 2), null);
             canvas.drawBitmap(ball, x , y, null);
             canvas.drawBitmap(_scratch, 750 , ye, null);
+            canvas.drawText("0|1", width/2, 20,paint);
             
         }
      
@@ -249,6 +255,10 @@ public class ClientePong extends Activity {
  
         @Override
         public void run() {
+        	 byte[] res; 
+        	 int id;
+        	 int anterior = 0;
+        	 byte cicle;
         	try {
                 /* s = new Socket("192.168.1.104",8888);
                 out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(s.getOutputStream())), true);
@@ -269,7 +279,7 @@ public class ClientePong extends Activity {
         	      socketUDP.receive(receivePacket);
         	      ye = receivePacket.getData()[0];
         	      
-        	      
+        	     
 
     	    } catch (UnknownHostException e) {
                 running = false;
@@ -286,9 +296,21 @@ public class ClientePong extends Activity {
                 	
                 	try {
                 		
-              	      	socketUDP.send(sendPacket);
+              	      	//socketUDP.send(sendPacket);
               	      	socketUDP.receive(receivePacket);
-              	      	ye = receivePacket.getData()[0];
+              	      	res = receivePacket.getData();
+              	      	id = res[2];
+              	      	Log.d("gf3",""+id);
+              	      
+              	      	if(id > anterior){
+              	      		
+              	      		anterior = id;
+              	      		ye = res[0]*4 + res[1];
+              	      		Log.d("gf3","--"+res[0]);
+              	      	}
+              	  	if(id > 124){
+          	      		anterior = 0;
+          	      	}
 					} catch (NumberFormatException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

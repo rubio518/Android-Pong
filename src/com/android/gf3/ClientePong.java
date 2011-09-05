@@ -38,7 +38,12 @@ public class ClientePong extends Activity {
       public int speed = 4; 	//velocidad de la pelota
       private int _x = 2;		//x de la barra (local)
       private int _y = 20;		//y de la barra (local)
-      private int ye = 0;		//y de la barra enemiga
+      private float ye = 0;		//y de la barra enemiga
+      private int xe = 0;		//y de la barra enemiga
+      
+      private float cpx = 0;
+      private float cpy = 0;
+      
       private BufferedReader input;
       private PrintWriter out;
       private Socket s;
@@ -67,8 +72,10 @@ public class ClientePong extends Activity {
         width = display.getWidth();
         height = display.getHeight();
         _y = height/2; 
+        cpx = (float)width/320;
+        cpy = height/240;
         //--------------------------------------------------------------------------------------
-        Log.d("gf3","w "+ width);
+        Log.d("gf3","w "+ cpx);
         Log.d("gf3","h "+ height);
         threadr.setRunning(true);
         threadr.start();
@@ -79,6 +86,7 @@ public class ClientePong extends Activity {
     class Panel extends SurfaceView implements SurfaceHolder.Callback {
         private TutorialThread _thread;
         private int sheight; 
+        private int swidth; 
         private Bitmap _scratch;
       	private Bitmap ball;
       	private Paint paint;
@@ -92,8 +100,12 @@ public class ClientePong extends Activity {
             bwidth = ball.getWidth();
             bheight = ball.getHeight();
             sheight = _scratch.getHeight();
+            swidth = _scratch.getWidth();
+            xe = width - swidth;
             paint = new Paint();
             paint.setTextSize(20);
+            
+            paint.setColor(0xFF00FF00);
             setFocusableInTouchMode(true);
         }
      
@@ -108,7 +120,7 @@ public class ClientePong extends Activity {
             	//out.println("end");
             	//}
             	
-            	x = 170;
+            	//x = 170;
         		Log.d("gf3", "se apacho menu");
         		try {	
 					s.close();
@@ -124,17 +136,17 @@ public class ClientePong extends Activity {
         public boolean onTouchEvent(MotionEvent event) {
             //_x = (int) event.getX();
             _y = (int) event.getY();
-            msg[0] = (byte) (_y/4);
+            msg[0] = (byte) (_y/(2*cpy));
             return true;
         }
         @Override
         public void onDraw(Canvas canvas) {
             
             
-            canvas.drawColor(Color.RED);
+            canvas.drawColor(Color.BLACK);
             canvas.drawBitmap(_scratch, _x , _y - (sheight / 2), null);
             canvas.drawBitmap(ball, x , y, null);
-            canvas.drawBitmap(_scratch, 750 , ye, null);
+            canvas.drawBitmap(_scratch, xe , ye- (sheight/2), null);
             canvas.drawText(puntosl+"|"+puntose, width/2, 20,paint);
             
         }
@@ -272,7 +284,7 @@ public class ClientePong extends Activity {
         	
         	try {
         		
-                s = new Socket("192.168.1.104",8887);
+                s = new Socket("192.168.1.8",8887);
                 out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(s.getOutputStream())), true);
                 //out.println("hola");
                 Log.d("Cliente", "empezando el cliente");
@@ -284,7 +296,7 @@ public class ClientePong extends Activity {
         		  //BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
         		  String messageStr="hello";
         	      socketUDP = new DatagramSocket();
-        	      InetAddress IPAddress = InetAddress.getByName("192.168.1.104");
+        	      InetAddress IPAddress = InetAddress.getByName("192.168.1.8");
         	      byte[] sendData = messageStr.getBytes();
         	      byte[] receiveData = new byte[1024];
         	      sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
@@ -322,9 +334,9 @@ public class ClientePong extends Activity {
               	      	if(id > anterior){
               	      		
               	      		anterior = id;
-              	      		x = (float) (res[0]*7.5+res[1]);
-              	      		y = res[2]*4+res[3];
-              	      		ye = res[5]*2 + res[6];
+              	      		x = (float)(res[0]*3+res[1])*cpx;
+              	      		y = (float)(res[2]*2+res[3])*cpy;
+              	      		ye = (res[5] + res[6])*cpy*2;
               	      		puntosl = res[7];
               	      		puntose = res[8];
           	      		
